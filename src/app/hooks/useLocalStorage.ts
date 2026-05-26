@@ -59,12 +59,9 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         lastRemoteJsonRef.current = JSON.stringify(remoteValue);
         setValue(remoteValue);
       } else {
-        const localJson = JSON.stringify(valueRef.current);
-        lastRemoteJsonRef.current = localJson;
-        await client.from("app_state").upsert({
-          key,
-          value: valueRef.current,
-        });
+        const initialJson = JSON.stringify(initialValue);
+        lastRemoteJsonRef.current = initialJson;
+        setValue(initialValue);
       }
 
       isCloudReadyRef.current = true;
@@ -83,6 +80,14 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
           filter: `key=eq.${key}`,
         },
         (payload) => {
+          if (payload.eventType === "DELETE") {
+            const initialJson = JSON.stringify(initialValue);
+            pendingWriteJsonRef.current = "";
+            lastRemoteJsonRef.current = initialJson;
+            setValue(initialValue);
+            return;
+          }
+
           const nextValue = (payload.new as AppStateRow<T> | null)?.value;
 
           if (nextValue === undefined) {

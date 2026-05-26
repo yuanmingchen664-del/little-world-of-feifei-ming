@@ -42,22 +42,6 @@ const initialAnniversaries: Anniversary[] = [
     mode: "countup",
     createdAt: "2025-02-24T00:00:00.000Z",
   },
-  {
-    id: "initial-2",
-    title: "菲菲的生日",
-    date: "2026-07-08",
-    color: "orange",
-    mode: "countdown",
-    createdAt: "2026-05-25T00:00:00.000Z",
-  },
-  {
-    id: "initial-3",
-    title: "第一次旅行",
-    date: "2026-08-20",
-    color: "yellow",
-    mode: "countdown",
-    createdAt: "2026-05-25T00:00:00.000Z",
-  },
 ];
 
 function createAnniversaryId() {
