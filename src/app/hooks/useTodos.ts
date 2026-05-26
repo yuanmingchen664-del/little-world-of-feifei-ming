@@ -7,6 +7,7 @@ export interface TodoItem {
   title: string;
   completed: boolean;
   createdAt: string;
+  completedAt?: string;
 }
 
 const initialTodos: TodoItem[] = [
@@ -73,7 +74,13 @@ export function useTodos() {
   const toggleTodo = (id: string) => {
     setTodos((currentTodos) =>
       currentTodos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo,
+        todo.id === id
+          ? {
+              ...todo,
+              completed: !todo.completed,
+              completedAt: todo.completed ? undefined : new Date().toISOString(),
+            }
+          : todo,
       ),
     );
   };

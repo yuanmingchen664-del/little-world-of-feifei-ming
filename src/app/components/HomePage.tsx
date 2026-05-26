@@ -1,64 +1,80 @@
+import { useState } from "react";
 import { PixelCalendar, PixelCheckbox, PixelHeart } from "./PixelIcons";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { usePhotos } from "../hooks/usePhotos";
+import {
+  AnniversaryMode,
+  getAnniversaryMode,
+  getAnnualDaysUntil,
+  getAnniversaryStatus,
+  getDaysSince,
+  getNextAnnualDate,
+  useAnniversaries,
+} from "../hooks/useAnniversaries";
+import { useTodos } from "../hooks/useTodos";
 import homeBackground from "../../imports/home-background.png";
 import smallHeart from "../../imports/image-5.png";
 
 const RELATIONSHIP_START_DATE = "2025-02-24";
+const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
-function toStartOfLocalDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+function shouldShowTodoOnHome(completed: boolean, completedAt?: string) {
+  if (!completed) {
+    return true;
+  }
+
+  if (!completedAt) {
+    return false;
+  }
+
+  return Date.now() - new Date(completedAt).getTime() < DAY_IN_MILLISECONDS;
 }
 
-function getDaysSince(dateValue: string) {
-  const today = toStartOfLocalDay(new Date());
-  const startDate = toStartOfLocalDay(new Date(`${dateValue}T00:00:00`));
-  const dayInMilliseconds = 24 * 60 * 60 * 1000;
-
-  return Math.max(0, Math.floor((today.getTime() - startDate.getTime()) / dayInMilliseconds) + 1);
-}
-
-interface Anniversary {
+interface HomeAnniversary {
   id: string;
   title: string;
   date: string;
-  daysTogether: number;
+  mode?: AnniversaryMode;
 }
 
-interface TodoItem {
-  id: string;
-  title: string;
-  completed: boolean;
+function getAnniversaryDisplay(anniversary: HomeAnniversary) {
+  const mode = getAnniversaryMode(anniversary);
+
+  if (mode === "countup") {
+    return {
+      days: getDaysSince(anniversary.date),
+      label: "天了",
+      meta: anniversary.date,
+    };
+  }
+
+  const daysUntil = getAnnualDaysUntil(anniversary.date);
+
+  return {
+    days: Math.abs(daysUntil),
+    label: getAnniversaryStatus(daysUntil),
+    meta: `${anniversary.date} · 下次 ${getNextAnnualDate(anniversary.date)}`,
+  };
 }
 
 export function HomePage() {
+  const [showAllAnniversaries, setShowAllAnniversaries] = useState(false);
   const { photos } = usePhotos();
+  const { todos, toggleTodo } = useTodos();
+  const { anniversaries } = useAnniversaries();
   const recentPhotos = photos.slice(0, 3);
-
-  const nextAnniversary: Anniversary = {
-    id: "1",
+  const homeTodos = todos
+    .filter((todo) => shouldShowTodoOnHome(todo.completed, todo.completedAt))
+    .slice(0, 10);
+  const relationshipDays = getDaysSince(RELATIONSHIP_START_DATE);
+  const fallbackAnniversary: HomeAnniversary = {
+    id: "relationship-start",
     title: "在一起纪念日",
     date: RELATIONSHIP_START_DATE,
-    daysTogether: getDaysSince(RELATIONSHIP_START_DATE),
+    mode: "countup",
   };
-
-  const todos: TodoItem[] = [
-    {
-      id: "1",
-      title: "准备生日礼物",
-      completed: false,
-    },
-    {
-      id: "2",
-      title: "订餐厅",
-      completed: true,
-    },
-    {
-      id: "3",
-      title: "买鲜花",
-      completed: false,
-    },
-  ];
+  const anniversarySource = anniversaries.length > 0 ? anniversaries : [fallbackAnniversary];
+  const visibleAnniversaries = anniversarySource.slice(0, showAllAnniversaries ? 10 : 3);
 
   return (
     <div className="h-full overflow-auto bg-amber-200" style={{ fontFamily: 'Press Start 2P, monospace' }}>
@@ -83,22 +99,45 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* 纪念日倒数 - 像素卡片 */}
+      {/* 重要日子 */}
       <div className="px-4 mt-4">
         <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-          <div className="flex items-center gap-2 text-amber-600 mb-3">
-            <PixelCalendar size={16} />
-            <span className="text-[8px] tracking-wider">重要日子</span>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-amber-600">
+              <PixelCalendar size={16} />
+              <span className="text-[8px] tracking-wider">重要日子</span>
+            </div>
+            {anniversarySource.length > 3 && (
+              <button
+                type="button"
+                onClick={() => setShowAllAnniversaries((current) => !current)}
+                className="text-amber-600 text-[8px] active:opacity-70"
+              >
+                {showAllAnniversaries ? "收起" : "展开"}
+              </button>
+            )}
           </div>
 
-          <h2 className="text-[10px] mb-1 leading-relaxed">{nextAnniversary.title}</h2>
-          <p className="text-[7px] text-gray-500 mb-3">{nextAnniversary.date}</p>
+          <div className="space-y-2">
+            {visibleAnniversaries.map((anniversary) => {
+              const display = getAnniversaryDisplay(anniversary);
 
-          <div className="bg-amber-100 border-2 border-amber-600 p-4 text-center">
-            <div className="text-3xl text-amber-800 mb-1">
-              {nextAnniversary.daysTogether}
-            </div>
-            <div className="text-[8px] text-amber-600">天了</div>
+              return (
+                <div
+                  key={anniversary.id}
+                  className="bg-amber-100 border-2 border-amber-600 p-3 flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <h2 className="text-[9px] mb-1 leading-relaxed truncate">{anniversary.title}</h2>
+                    <p className="text-[7px] text-gray-500 leading-relaxed">{display.meta}</p>
+                  </div>
+                  <div className="text-center flex-shrink-0 min-w-[56px]">
+                    <div className="text-2xl text-amber-800 mb-1">{display.days}</div>
+                    <div className="text-[7px] text-amber-600">{display.label}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -112,19 +151,30 @@ export function HomePage() {
           </a>
         </div>
 
-        <div className="space-y-2">
-          {todos.slice(0, 3).map((todo) => (
-            <div
-              key={todo.id}
-              className="bg-white border-2 border-black p-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-3"
-            >
-              <PixelCheckbox size={16} checked={todo.completed} className="flex-shrink-0 text-amber-600" />
-              <span className={`text-[8px] flex-1 leading-relaxed ${todo.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
-                {todo.title}
-              </span>
-            </div>
-          ))}
-        </div>
+        {homeTodos.length > 0 ? (
+          <div className="space-y-2">
+            {homeTodos.map((todo) => (
+              <button
+                key={todo.id}
+                type="button"
+                onClick={() => toggleTodo(todo.id)}
+                className="w-full text-left bg-white border-2 border-black p-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-3"
+              >
+                <PixelCheckbox size={16} checked={todo.completed} className="flex-shrink-0 text-amber-600" />
+                <span className={`text-[8px] flex-1 leading-relaxed ${todo.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                  {todo.title}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <a
+            href="/todos"
+            className="block bg-white border-4 border-black p-4 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
+          >
+            <p className="text-[8px] text-gray-500 leading-relaxed">还没有待办<br/>去添加一个计划吧</p>
+          </a>
+        )}
       </div>
 
       {/* 最近照片预览 */}
@@ -181,7 +231,7 @@ export function HomePage() {
             />
           </div>
           <p className="text-[8px] mb-2">我们已经相恋</p>
-          <div className="text-4xl mb-2">{nextAnniversary.daysTogether}</div>
+          <div className="text-4xl mb-2">{relationshipDays}</div>
           <p className="text-[8px]">天了</p>
         </div>
       </div>

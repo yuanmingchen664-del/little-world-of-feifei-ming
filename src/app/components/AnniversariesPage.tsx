@@ -1,18 +1,22 @@
 import { useState } from "react";
 import {
   AnniversaryColor,
+  AnniversaryMode,
+  getAnniversaryMode,
   getAnniversaryStatus,
-  getDaysUntil,
+  getAnnualDaysUntil,
+  getDaysSince,
+  getNextAnnualDate,
   useAnniversaries,
 } from "../hooks/useAnniversaries";
 import { PixelPlus, PixelCalendar, PixelSparkle, PixelTrash } from "./PixelIcons";
 
 export function AnniversariesPage() {
-  const { anniversaries, addAnniversary, deleteAnniversary } = useAnniversaries();
+  const { anniversaries, addAnniversary, deleteAnniversary, toggleAnniversaryMode } = useAnniversaries();
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
-  const [color, setColor] = useState<AnniversaryColor>("amber");
+  const [mode, setMode] = useState<AnniversaryMode>("countdown");
 
   const getColorClasses = (color: AnniversaryColor) => {
     const colors: Record<string, { bg: string; border: string }> = {
@@ -26,10 +30,10 @@ export function AnniversariesPage() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (addAnniversary({ title, date, color })) {
+    if (addAnniversary({ title, date, color: "amber", mode })) {
       setTitle("");
       setDate("");
-      setColor("amber");
+      setMode("countdown");
       setIsAdding(false);
     }
   };
@@ -80,19 +84,24 @@ export function AnniversariesPage() {
               className="w-full bg-amber-50 border-4 border-black px-3 py-3 text-[8px] text-gray-800 outline-none focus:bg-white"
             />
 
-            <div className="grid grid-cols-3 gap-2">
-              {(["amber", "orange", "yellow"] as AnniversaryColor[]).map((option) => {
-                const colorClasses = getColorClasses(option);
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    aria-label={`选择${option}颜色`}
-                    onClick={() => setColor(option)}
-                    className={`${colorClasses.bg} border-4 ${color === option ? colorClasses.border : "border-black"} min-h-[40px] active:translate-y-[1px]`}
-                  />
-                );
-              })}
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { value: "countdown", label: "倒数" },
+                { value: "countup", label: "已过" },
+              ] as { value: AnniversaryMode; label: string }[]).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setMode(option.value)}
+                  className={`border-4 border-black px-3 py-2 text-[8px] transition-all ${
+                    mode === option.value
+                      ? "bg-orange-500 text-white"
+                      : "bg-amber-100 text-gray-700 active:translate-y-[1px]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
 
             <button
@@ -107,8 +116,12 @@ export function AnniversariesPage() {
 
         {anniversaries.map((anniversary) => {
           const colorClasses = getColorClasses(anniversary.color);
-          const daysUntil = getDaysUntil(anniversary.date);
-          const status = getAnniversaryStatus(daysUntil);
+          const mode = getAnniversaryMode(anniversary);
+          const daysUntil = getAnnualDaysUntil(anniversary.date);
+          const daysSince = getDaysSince(anniversary.date);
+          const displayDays = mode === "countup" ? daysSince : Math.abs(daysUntil);
+          const status = mode === "countup" ? "天了" : getAnniversaryStatus(daysUntil);
+          const nextDate = getNextAnnualDate(anniversary.date);
           return (
             <div
               key={anniversary.id}
@@ -123,13 +136,26 @@ export function AnniversariesPage() {
                   <p className="text-[7px] text-gray-600 flex items-center gap-1.5 ml-4">
                     <PixelCalendar size={10} />
                     {anniversary.date}
+                    {mode === "countdown" && (
+                      <>
+                        <span className="w-1 h-1 bg-gray-400" />
+                        下次 {nextDate}
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="text-center flex-shrink-0">
                   <div className="text-2xl text-amber-900">
-                    {Math.abs(daysUntil)}
+                    {displayDays}
                   </div>
                   <div className="text-[7px] text-gray-600">{status}</div>
+                  <button
+                    type="button"
+                    onClick={() => toggleAnniversaryMode(anniversary.id)}
+                    className="mt-2 bg-white text-gray-700 border-4 border-black px-2 py-1 text-[7px] active:translate-x-[1px] active:translate-y-[1px]"
+                  >
+                    {mode === "countup" ? "已过" : "倒数"}
+                  </button>
                   <button
                     type="button"
                     aria-label={`删除${anniversary.title}`}
