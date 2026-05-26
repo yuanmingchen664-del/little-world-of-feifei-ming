@@ -12,6 +12,8 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   const isCloudReadyRef = useRef(false);
   const valueRef = useRef<T>(initialValue);
   const lastRemoteJsonRef = useRef("");
+  const pendingWriteJsonRef = useRef("");
+  const writeVersionRef = useRef(0);
 
   const [value, setValue] = useState<T>(() => {
     if (typeof window === "undefined") {
@@ -89,11 +91,17 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
           const nextJson = JSON.stringify(nextValue);
 
+          if (pendingWriteJsonRef.current && nextJson !== pendingWriteJsonRef.current) {
+            return;
+          }
+
           if (nextJson === lastRemoteJsonRef.current) {
+            pendingWriteJsonRef.current = "";
             return;
           }
 
           lastRemoteJsonRef.current = nextJson;
+          pendingWriteJsonRef.current = "";
           setValue(nextValue);
         },
       )
@@ -126,8 +134,23 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       return;
     }
 
+    const writeVersion = writeVersionRef.current + 1;
+    writeVersionRef.current = writeVersion;
+    pendingWriteJsonRef.current = nextJson;
     lastRemoteJsonRef.current = nextJson;
-    client.from("app_state").upsert({ key, value });
+
+    client
+      .from("app_state")
+      .upsert({ key, value })
+      .then(({ error }) => {
+        if (writeVersionRef.current !== writeVersion) {
+          return;
+        }
+
+        if (!error) {
+          pendingWriteJsonRef.current = "";
+        }
+      });
   }, [isAuthenticated, key, value]);
 
   return [value, setValue] as const;
