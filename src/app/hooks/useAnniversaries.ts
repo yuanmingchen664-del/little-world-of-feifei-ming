@@ -33,16 +33,16 @@ export function getAnniversaryMode(anniversary: Pick<Anniversary, "title" | "dat
   return "countdown";
 }
 
-const initialAnniversaries: Anniversary[] = [
-  {
-    id: "initial-1",
-    title: "在一起纪念日",
-    date: "2025-02-24",
-    color: "amber",
-    mode: "countup",
-    createdAt: "2025-02-24T00:00:00.000Z",
-  },
-];
+const relationshipAnniversary: Anniversary = {
+  id: "relationship-start",
+  title: "在一起纪念日",
+  date: "2025-02-24",
+  color: "amber",
+  mode: "countup",
+  createdAt: "2025-02-24T00:00:00.000Z",
+};
+
+const initialAnniversaries: Anniversary[] = [relationshipAnniversary];
 
 function createAnniversaryId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -110,9 +110,19 @@ export function useAnniversaries() {
     initialAnniversaries,
   );
 
+  const normalizedAnniversaries = useMemo(() => {
+    const hasRelationshipAnniversary = anniversaries.some(
+      (anniversary) =>
+        anniversary.title === relationshipAnniversary.title &&
+        anniversary.date === relationshipAnniversary.date,
+    );
+
+    return hasRelationshipAnniversary ? anniversaries : [relationshipAnniversary, ...anniversaries];
+  }, [anniversaries]);
+
   const sortedAnniversaries = useMemo(
     () =>
-      [...anniversaries].sort((first, second) => {
+      [...normalizedAnniversaries].sort((first, second) => {
         const firstMode = getAnniversaryMode(first);
         const secondMode = getAnniversaryMode(second);
         const firstDays = firstMode === "countup" ? getDaysSince(first.date) : getAnnualDaysUntil(first.date);
@@ -120,7 +130,7 @@ export function useAnniversaries() {
 
         return firstDays - secondDays;
       }),
-    [anniversaries],
+    [normalizedAnniversaries],
   );
 
   const addAnniversary = ({ title, date, color, mode }: NewAnniversary) => {

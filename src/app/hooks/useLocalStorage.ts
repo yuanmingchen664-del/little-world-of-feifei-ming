@@ -59,9 +59,19 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         lastRemoteJsonRef.current = JSON.stringify(remoteValue);
         setValue(remoteValue);
       } else {
+        const localJson = JSON.stringify(valueRef.current);
         const initialJson = JSON.stringify(initialValue);
-        lastRemoteJsonRef.current = initialJson;
-        setValue(initialValue);
+
+        if (localJson !== initialJson) {
+          lastRemoteJsonRef.current = localJson;
+          await client.from("app_state").upsert({
+            key,
+            value: valueRef.current,
+          });
+        } else {
+          lastRemoteJsonRef.current = initialJson;
+          setValue(initialValue);
+        }
       }
 
       isCloudReadyRef.current = true;
