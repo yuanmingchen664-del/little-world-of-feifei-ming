@@ -1,7 +1,10 @@
 import { Outlet, NavLink } from "react-router";
+import { useAuth } from "../auth/AuthProvider";
 import { PixelHome, PixelBook, PixelMail, PixelList, PixelCalendar, PixelImage } from "./PixelIcons";
 
 export function Layout() {
+  const { account, signOut } = useAuth();
+
   return (
     <div className="flex flex-col h-full bg-amber-200" style={{ fontFamily: 'Press Start 2P, monospace' }}>
       <main className="flex-1 overflow-hidden">
@@ -9,6 +12,12 @@ export function Layout() {
       </main>
 
       <nav className="flex-shrink-0 bg-amber-900 border-t-4 border-black safe-area-inset-bottom">
+        <div className="flex items-center justify-between px-3 py-2 border-b-2 border-black text-amber-200">
+          <span className="text-[7px]">当前：{account?.displayName}</span>
+          <button type="button" onClick={signOut} className="text-[7px] text-amber-300 active:opacity-70">
+            退出
+          </button>
+        </div>
         <div className="flex justify-around items-center h-24 px-1">
           <NavLink
             to="/"

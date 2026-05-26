@@ -33,6 +33,30 @@ npm run build      # 生产构建
 npm run preview    # 预览生产构建
 ```
 
+## Supabase 同步
+
+登录账号在 Supabase Auth 中创建：
+
+```text
+feifei@little-world.local  ->  feifei
+ming@little-world.local    ->  ming
+```
+
+App 登录页使用账号名 `feifei` / `ming`，密码由 Supabase Auth 校验。
+
+需要配置环境变量：
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+数据库表和 Realtime 配置在：
+
+```text
+supabase/schema.sql
+```
+
 ## 当前功能
 
 - 待办事项：新增、完成、删除、本地保存

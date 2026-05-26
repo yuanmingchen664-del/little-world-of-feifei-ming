@@ -1,12 +1,14 @@
 import { useState } from "react";
+import { useAuth } from "../auth/AuthProvider";
 import { NoteAuthor } from "../hooks/useNotes";
 import { useDiaryEntries } from "../hooks/useDiaryEntries";
 import { PixelHeart, PixelBook, PixelFeather, PixelTrash } from "./PixelIcons";
 
 export function DiaryPage() {
+  const { account } = useAuth();
   const { entries, addEntry, deleteEntry } = useDiaryEntries();
   const [isWriting, setIsWriting] = useState(false);
-  const [author, setAuthor] = useState<NoteAuthor>("小明");
+  const [author, setAuthor] = useState<NoteAuthor>(account?.displayName || "小明");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 

@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useAuth } from "../auth/AuthProvider";
 import { formatNoteTime, NoteAuthor, useNotes } from "../hooks/useNotes";
 import { PixelSend, PixelMail, PixelTrash } from "./PixelIcons";
 
 export function NotesPage() {
+  const { account } = useAuth();
   const { notes, addNote, deleteNote } = useNotes();
   const [newNote, setNewNote] = useState("");
-  const [author, setAuthor] = useState<NoteAuthor>("小明");
+  const [author, setAuthor] = useState<NoteAuthor>(account?.displayName || "小明");
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
