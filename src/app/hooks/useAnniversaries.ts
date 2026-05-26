@@ -22,9 +22,9 @@ const initialAnniversaries: Anniversary[] = [
   {
     id: "initial-1",
     title: "在一起纪念日",
-    date: "2026-06-14",
+    date: "2025-02-24",
     color: "amber",
-    createdAt: "2026-05-25T00:00:00.000Z",
+    createdAt: "2025-02-24T00:00:00.000Z",
   },
   {
     id: "initial-2",

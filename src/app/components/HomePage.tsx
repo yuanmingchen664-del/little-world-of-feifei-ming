@@ -1,19 +1,28 @@
 import { PixelCalendar, PixelCheckbox, PixelHeart } from "./PixelIcons";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import catsBackground from "../../imports/image-4.png";
-import heartImage from "../../imports/image-3.png";
+import { usePhotos } from "../hooks/usePhotos";
+import homeBackground from "../../imports/home-background.png";
 import smallHeart from "../../imports/image-5.png";
+
+const RELATIONSHIP_START_DATE = "2025-02-24";
+
+function toStartOfLocalDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getDaysSince(dateValue: string) {
+  const today = toStartOfLocalDay(new Date());
+  const startDate = toStartOfLocalDay(new Date(`${dateValue}T00:00:00`));
+  const dayInMilliseconds = 24 * 60 * 60 * 1000;
+
+  return Math.max(0, Math.floor((today.getTime() - startDate.getTime()) / dayInMilliseconds) + 1);
+}
 
 interface Anniversary {
   id: string;
   title: string;
   date: string;
-  daysUntil: number;
-}
-
-interface Photo {
-  id: string;
-  url: string;
+  daysTogether: number;
 }
 
 interface TodoItem {
@@ -23,27 +32,15 @@ interface TodoItem {
 }
 
 export function HomePage() {
+  const { photos } = usePhotos();
+  const recentPhotos = photos.slice(0, 3);
+
   const nextAnniversary: Anniversary = {
     id: "1",
     title: "在一起纪念日",
-    date: "2024-06-14",
-    daysUntil: 21,
+    date: RELATIONSHIP_START_DATE,
+    daysTogether: getDaysSince(RELATIONSHIP_START_DATE),
   };
-
-  const recentPhotos: Photo[] = [
-    {
-      id: "1",
-      url: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=600",
-    },
-    {
-      id: "2",
-      url: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=600",
-    },
-    {
-      id: "3",
-      url: "https://images.unsplash.com/photo-1464047736614-af63643285bf?w=600",
-    },
-  ];
 
   const todos: TodoItem[] = [
     {
@@ -65,11 +62,11 @@ export function HomePage() {
 
   return (
     <div className="h-full overflow-auto bg-amber-200" style={{ fontFamily: 'Press Start 2P, monospace' }}>
-      {/* 头部像素区域 - 使用猫咪背景图 */}
+      {/* 头部像素区域 */}
       <div
-        className="relative h-[65vh] bg-cover bg-center overflow-hidden"
+        className="relative h-[65vh] bg-contain bg-center bg-no-repeat overflow-hidden bg-sky-400"
         style={{
-          backgroundImage: `url(${catsBackground})`,
+          backgroundImage: `url(${homeBackground})`,
           imageRendering: 'pixelated'
         }}
       >
@@ -91,7 +88,7 @@ export function HomePage() {
         <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
           <div className="flex items-center gap-2 text-amber-600 mb-3">
             <PixelCalendar size={16} />
-            <span className="text-[8px] tracking-wider">即将到来</span>
+            <span className="text-[8px] tracking-wider">重要日子</span>
           </div>
 
           <h2 className="text-[10px] mb-1 leading-relaxed">{nextAnniversary.title}</h2>
@@ -99,9 +96,9 @@ export function HomePage() {
 
           <div className="bg-amber-100 border-2 border-amber-600 p-4 text-center">
             <div className="text-3xl text-amber-800 mb-1">
-              {nextAnniversary.daysUntil}
+              {nextAnniversary.daysTogether}
             </div>
-            <div className="text-[8px] text-amber-600">天后</div>
+            <div className="text-[8px] text-amber-600">天了</div>
           </div>
         </div>
       </div>
@@ -139,22 +136,31 @@ export function HomePage() {
           </a>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          {recentPhotos.map((photo, index) => (
-            <div
-              key={photo.id}
-              className="aspect-square border-4 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <img
-                src={photo.url}
-                alt="Memory"
-                className="w-full h-full object-cover"
-                style={{ imageRendering: 'pixelated' }}
-              />
-            </div>
-          ))}
-        </div>
+        {recentPhotos.length > 0 ? (
+          <div className="grid grid-cols-3 gap-2">
+            {recentPhotos.map((photo, index) => (
+              <div
+                key={photo.id}
+                className="aspect-square border-4 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <img
+                  src={photo.url}
+                  alt={photo.caption}
+                  className="w-full h-full object-cover"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <a
+            href="/photos"
+            className="block bg-white border-4 border-black p-4 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
+          >
+            <p className="text-[8px] text-gray-500 leading-relaxed">还没有照片<br/>去上传第一张回忆吧</p>
+          </a>
+        )}
       </div>
 
       {/* 相恋天数 - 像素卡片 */}
@@ -175,7 +181,7 @@ export function HomePage() {
             />
           </div>
           <p className="text-[8px] mb-2">我们已经相恋</p>
-          <div className="text-4xl mb-2">365</div>
+          <div className="text-4xl mb-2">{nextAnniversary.daysTogether}</div>
           <p className="text-[8px]">天了</p>
         </div>
       </div>
