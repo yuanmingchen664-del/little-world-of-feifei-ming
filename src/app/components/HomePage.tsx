@@ -64,7 +64,7 @@ export function HomePage() {
     <div className="h-full overflow-auto bg-amber-200" style={{ fontFamily: 'Press Start 2P, monospace' }}>
       {/* 头部像素区域 */}
       <div
-        className="relative h-[65vh] bg-contain bg-center bg-no-repeat overflow-hidden bg-sky-400"
+        className="relative h-[65vh] bg-cover bg-center overflow-hidden"
         style={{
           backgroundImage: `url(${homeBackground})`,
           imageRendering: 'pixelated'
