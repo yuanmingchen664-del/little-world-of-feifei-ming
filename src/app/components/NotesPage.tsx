@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
-import { formatNoteTime, NoteAuthor, useNotes } from "../hooks/useNotes";
+import { formatNoteTime, useNotes } from "../hooks/useNotes";
 import { PixelSend, PixelMail, PixelTrash } from "./PixelIcons";
 
 export function NotesPage() {
   const { account } = useAuth();
   const { notes, addNote, deleteNote } = useNotes();
   const [newNote, setNewNote] = useState("");
-  const [author, setAuthor] = useState<NoteAuthor>(account?.displayName || "小明");
+  const author = account?.displayName || "小明";
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -28,21 +28,8 @@ export function NotesPage() {
       </header>
 
       <div className="flex-1 overflow-auto p-4 space-y-2.5">
-        <div className="bg-white border-4 border-black p-2 flex gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          {(["小明", "菲菲"] as NoteAuthor[]).map((person) => (
-            <button
-              key={person}
-              type="button"
-              onClick={() => setAuthor(person)}
-              className={`flex-1 border-4 border-black px-3 py-2 text-[8px] transition-all ${
-                author === person
-                  ? "bg-orange-500 text-white"
-                  : "bg-amber-100 text-gray-700 active:translate-y-[1px]"
-              }`}
-            >
-              {person}
-            </button>
-          ))}
+        <div className="bg-white border-4 border-black px-3 py-3 text-[8px] text-gray-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          当前以 <span className="text-orange-600">{author}</span> 发送小纸条
         </div>
 
         {notes.map((note) => (
