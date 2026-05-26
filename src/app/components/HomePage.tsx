@@ -67,14 +67,7 @@ export function HomePage() {
     .filter((todo) => shouldShowTodoOnHome(todo.completed, todo.completedAt))
     .slice(0, 10);
   const relationshipDays = getDaysSince(RELATIONSHIP_START_DATE);
-  const fallbackAnniversary: HomeAnniversary = {
-    id: "relationship-start",
-    title: "在一起纪念日",
-    date: RELATIONSHIP_START_DATE,
-    mode: "countup",
-  };
-  const anniversarySource = anniversaries.length > 0 ? anniversaries : [fallbackAnniversary];
-  const visibleAnniversaries = anniversarySource.slice(0, showAllAnniversaries ? 10 : 3);
+  const visibleAnniversaries = anniversaries.slice(0, showAllAnniversaries ? 10 : 3);
 
   return (
     <div className="h-full overflow-auto bg-amber-200" style={{ fontFamily: 'Press Start 2P, monospace' }}>
@@ -107,7 +100,7 @@ export function HomePage() {
               <PixelCalendar size={16} />
               <span className="text-[8px] tracking-wider">重要日子</span>
             </div>
-            {anniversarySource.length > 3 && (
+            {anniversaries.length > 3 && (
               <button
                 type="button"
                 onClick={() => setShowAllAnniversaries((current) => !current)}
@@ -118,27 +111,36 @@ export function HomePage() {
             )}
           </div>
 
-          <div className="space-y-2">
-            {visibleAnniversaries.map((anniversary) => {
-              const display = getAnniversaryDisplay(anniversary);
+          {visibleAnniversaries.length > 0 ? (
+            <div className="space-y-2">
+              {visibleAnniversaries.map((anniversary) => {
+                const display = getAnniversaryDisplay(anniversary);
 
-              return (
-                <div
-                  key={anniversary.id}
-                  className="bg-amber-100 border-2 border-amber-600 p-3 flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0">
-                    <h2 className="text-[9px] mb-1 leading-relaxed truncate">{anniversary.title}</h2>
-                    <p className="text-[7px] text-gray-500 leading-relaxed">{display.meta}</p>
+                return (
+                  <div
+                    key={anniversary.id}
+                    className="bg-amber-100 border-2 border-amber-600 p-3 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <h2 className="text-[9px] mb-1 leading-relaxed truncate">{anniversary.title}</h2>
+                      <p className="text-[7px] text-gray-500 leading-relaxed">{display.meta}</p>
+                    </div>
+                    <div className="text-center flex-shrink-0 min-w-[56px]">
+                      <div className="text-2xl text-amber-800 mb-1">{display.days}</div>
+                      <div className="text-[7px] text-amber-600">{display.label}</div>
+                    </div>
                   </div>
-                  <div className="text-center flex-shrink-0 min-w-[56px]">
-                    <div className="text-2xl text-amber-800 mb-1">{display.days}</div>
-                    <div className="text-[7px] text-amber-600">{display.label}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <a
+              href="/anniversaries"
+              className="block bg-amber-100 border-2 border-amber-600 p-4 text-center active:opacity-70"
+            >
+              <p className="text-[8px] text-gray-500 leading-relaxed">还没有重要日子<br/>去添加一个纪念日吧</p>
+            </a>
+          )}
         </div>
       </div>
 

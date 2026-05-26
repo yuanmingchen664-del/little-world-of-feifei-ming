@@ -21,28 +21,11 @@ export interface NewAnniversary {
   mode: AnniversaryMode;
 }
 
-export function getAnniversaryMode(anniversary: Pick<Anniversary, "title" | "date" | "mode">): AnniversaryMode {
-  if (anniversary.mode) {
-    return anniversary.mode;
-  }
-
-  if (anniversary.title === "在一起纪念日" && anniversary.date === "2025-02-24") {
-    return "countup";
-  }
-
-  return "countdown";
+export function getAnniversaryMode(anniversary: Pick<Anniversary, "mode">): AnniversaryMode {
+  return anniversary.mode ?? "countdown";
 }
 
-const relationshipAnniversary: Anniversary = {
-  id: "relationship-start",
-  title: "在一起纪念日",
-  date: "2025-02-24",
-  color: "amber",
-  mode: "countup",
-  createdAt: "2025-02-24T00:00:00.000Z",
-};
-
-const initialAnniversaries: Anniversary[] = [relationshipAnniversary];
+const initialAnniversaries: Anniversary[] = [];
 
 function createAnniversaryId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -110,19 +93,9 @@ export function useAnniversaries() {
     initialAnniversaries,
   );
 
-  const normalizedAnniversaries = useMemo(() => {
-    const hasRelationshipAnniversary = anniversaries.some(
-      (anniversary) =>
-        anniversary.title === relationshipAnniversary.title &&
-        anniversary.date === relationshipAnniversary.date,
-    );
-
-    return hasRelationshipAnniversary ? anniversaries : [relationshipAnniversary, ...anniversaries];
-  }, [anniversaries]);
-
   const sortedAnniversaries = useMemo(
     () =>
-      [...normalizedAnniversaries].sort((first, second) => {
+      [...anniversaries].sort((first, second) => {
         const firstMode = getAnniversaryMode(first);
         const secondMode = getAnniversaryMode(second);
         const firstDays = firstMode === "countup" ? getDaysSince(first.date) : getAnnualDaysUntil(first.date);
@@ -130,7 +103,7 @@ export function useAnniversaries() {
 
         return firstDays - secondDays;
       }),
-    [normalizedAnniversaries],
+    [anniversaries],
   );
 
   const addAnniversary = ({ title, date, color, mode }: NewAnniversary) => {

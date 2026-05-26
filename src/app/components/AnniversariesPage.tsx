@@ -11,11 +11,14 @@ import {
 } from "../hooks/useAnniversaries";
 import { PixelPlus, PixelCalendar, PixelSparkle, PixelTrash } from "./PixelIcons";
 
+const currentYear = String(new Date().getFullYear());
+
 export function AnniversariesPage() {
   const { anniversaries, addAnniversary, deleteAnniversary, toggleAnniversaryMode } = useAnniversaries();
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
+  const [year, setYear] = useState(currentYear);
   const [mode, setMode] = useState<AnniversaryMode>("countdown");
 
   const getColorClasses = (color: AnniversaryColor) => {
@@ -27,12 +30,36 @@ export function AnniversariesPage() {
     return colors[color] || colors.amber;
   };
 
+  const updateDateYear = (nextYear: string) => {
+    const [, month = "01", day = "01"] = date.split("-");
+    setDate(`${nextYear}-${month || "01"}-${day || "01"}`);
+  };
+
+  const handleYearChange = (value: string) => {
+    const nextYear = value.replace(/\D/g, "").slice(0, 4);
+    setYear(nextYear);
+
+    if (nextYear.length === 4) {
+      updateDateYear(nextYear);
+    }
+  };
+
+  const handleDateChange = (value: string) => {
+    setDate(value);
+
+    const [nextYear] = value.split("-");
+    if (nextYear) {
+      setYear(nextYear);
+    }
+  };
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (addAnniversary({ title, date, color: "amber", mode })) {
       setTitle("");
       setDate("");
+      setYear(currentYear);
       setMode("countdown");
       setIsAdding(false);
     }
@@ -75,12 +102,23 @@ export function AnniversariesPage() {
               className="w-full bg-amber-50 border-4 border-black px-3 py-3 text-[8px] text-gray-800 placeholder:text-gray-400 outline-none focus:bg-white"
             />
 
+            <label htmlFor="anniversary-year" className="sr-only">纪念日年份</label>
+            <input
+              id="anniversary-year"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={year}
+              onChange={(event) => handleYearChange(event.target.value)}
+              placeholder="年份，例如 1995"
+              className="w-full bg-amber-50 border-4 border-black px-3 py-3 text-[8px] text-gray-800 placeholder:text-gray-400 outline-none focus:bg-white"
+            />
+
             <label htmlFor="anniversary-date" className="sr-only">纪念日日期</label>
             <input
               id="anniversary-date"
               type="date"
               value={date}
-              onChange={(event) => setDate(event.target.value)}
+              onChange={(event) => handleDateChange(event.target.value)}
               className="w-full bg-amber-50 border-4 border-black px-3 py-3 text-[8px] text-gray-800 outline-none focus:bg-white"
             />
 
