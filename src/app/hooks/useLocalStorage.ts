@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type SetStateAction } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { supabase } from "../lib/supabase";
 
@@ -13,6 +13,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   const valueRef = useRef<T>(initialValue);
   const lastRemoteJsonRef = useRef("");
   const pendingWriteJsonRef = useRef("");
+  const localChangeVersionRef = useRef(0);
   const writeVersionRef = useRef(0);
 
   const [value, setValue] = useState<T>(() => {
@@ -32,6 +33,11 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     valueRef.current = value;
   }, [value]);
 
+  const setSyncedValue = (nextValue: SetStateAction<T>) => {
+    localChangeVersionRef.current += 1;
+    setValue(nextValue);
+  };
+
   useEffect(() => {
     isCloudReadyRef.current = false;
 
@@ -44,6 +50,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     let isCancelled = false;
 
     async function loadCloudValue() {
+      const loadStartedAtVersion = localChangeVersionRef.current;
       const { data, error } = await client
         .from("app_state")
         .select("key,value")
@@ -51,6 +58,17 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         .maybeSingle<AppStateRow<T>>();
 
       if (isCancelled) {
+        return;
+      }
+
+      if (localChangeVersionRef.current !== loadStartedAtVersion) {
+        const localJson = JSON.stringify(valueRef.current);
+        lastRemoteJsonRef.current = localJson;
+        await client.from("app_state").upsert({
+          key,
+          value: valueRef.current,
+        });
+        isCloudReadyRef.current = true;
         return;
       }
 
@@ -168,5 +186,5 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       });
   }, [isAuthenticated, key, value]);
 
-  return [value, setValue] as const;
+  return [value, setSyncedValue] as const;
 }
